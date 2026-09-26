@@ -6,6 +6,7 @@ import {
   STREAM_SUMMARY_RESPONSE_SCHEMA_ID,
   INDEXER_STATUS_SCHEMA_ID,
   ERROR_SCHEMA_ID,
+  API_INDEX_SCHEMA_ID,
 } from "../src/schema.js";
 
 describe("OpenAPI Schema Identifiers", () => {
@@ -20,6 +21,7 @@ describe("OpenAPI Schema Identifiers", () => {
       STREAM_SUMMARY_RESPONSE_SCHEMA_ID,
       INDEXER_STATUS_SCHEMA_ID,
       ERROR_SCHEMA_ID,
+      API_INDEX_SCHEMA_ID,
     ];
 
     const actualKeys = Object.keys((swaggerDoc as any).components?.schemas ?? {});
