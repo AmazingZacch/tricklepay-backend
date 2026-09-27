@@ -1,13 +1,10 @@
-#266 Add a test that the summary endpoint handles an empty database
-Repo Avatar
-TricklePay/tricklepay-backend
 Summary
-Aggregates over no rows are where a sum becomes null and a response becomes malformed. The empty case is not covered.
+When indexing stalls an operator needs a checklist: what to look at, which metric confirms it, and what to do. That knowledge is not written down anywhere.
 
 Acceptance criteria
- A test asserts the summary endpoint returns zeroed figures with no streams.
- The response still validates against its schema.
- The suite still passes.
+ A runbook describes how to diagnose a stalled indexer.
+ It names the metrics and log lines to check.
+ It lists the recovery steps in order.
 Getting started
 Fork this repository, clone your fork, and add this repo as upstream:
 
@@ -16,8 +13,8 @@ cd tricklepay-backend
 git remote add upstream https://github.com/TricklePay/tricklepay-backend.git
 Create a branch for this issue:
 
-git checkout -b test/issue-266
+git checkout -b docs/issue-344
 Suggested commit message:
 
-test: cover the summary endpoint with no data
+docs: add a runbook for a stalled indexer
 Run npm run typecheck, npm test, and npm run build before opening a pull request and linking this issue.
