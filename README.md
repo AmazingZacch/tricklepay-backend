@@ -159,6 +159,27 @@ Each stream is returned with its stored fields plus derived `vested`,
 `completed`, or `cancelled`). `progress` is vesting progress in basis points
 (0–10000).
 
+### Stream Summary Endpoint
+
+The `/streams/summary` endpoint returns aggregate counts and exact total amounts grouped by lifecycle status. It is designed for dashboard overview displays where individual stream details are not needed.
+
+**When to use `/streams/summary` instead of `/streams`:**
+- Building a dashboard "at a glance" panel showing counts and totals per status
+- Displaying aggregate metrics without paginating through individual streams
+- Monitoring overall system activity across all indexed streams
+
+**Response format:**
+```json
+{
+  "pending": { "count": 42, "totalAmount": "1000000000000000", "withdrawn": "0" },
+  "streaming": { "count": 123, "totalAmount": "5000000000000000", "withdrawn": "1250000000000000" },
+  "completed": { "count": 89, "totalAmount": "3000000000000000", "withdrawn": "3000000000000000" },
+  "cancelled": { "count": 5, "totalAmount": "250000000000000", "withdrawn": "100000000000000" }
+}
+```
+
+All amounts are exact integer base units encoded as strings (not JSON numbers) to preserve full 128-bit precision. The response is cached for 30 seconds (`Cache-Control: public, max-age=30`).
+
 **Data Types and Precision**
 - **Amounts** (`totalAmount`, `withdrawn`, `vested`, `withdrawable`, `locked`) are returned as strings holding integer base units.
 - **Times** (`startTime`, `endTime`, `cliffTime`) are returned as Unix seconds encoded as strings.
