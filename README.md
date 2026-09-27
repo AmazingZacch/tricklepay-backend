@@ -86,7 +86,7 @@ That means these figures track wall-clock time rather than the last indexed
 event — a stream's `vested` amount can be higher on a second request than the
 first even though the indexer applied nothing in between — and they agree with
 what the contract would report if queried directly, without ever making that
-chain round-trip.
+chain round-trip. For a detailed explanation of why these figures are computed per request and how consistency with the chain is preserved, see [Derived Figures and Real-Time Vesting](docs/derived-figures.md).
 
 ## Documentation
 
@@ -462,6 +462,9 @@ docker run -d \
   tricklepay-backend
 ```
 
+The API listens on `http://localhost:3000`.
+For instructions on pointing the indexer and API to a standalone or containerized local Soroban RPC node, see [Running Against a Local Network](docs/local-network.md).
+
 ## Failed events table
 
 The `FailedEvent` table is the indexer's operator-facing safety net. When an
@@ -789,7 +792,7 @@ ticks start), then closes the HTTP server (Fastify stops accepting new
 connections and waits for in-flight requests to finish), then drains the
 Postgres connection pool, then exits `0`. Give the platform's termination
 grace period enough headroom for in-flight requests to finish — the process
-does not force-exit early on its own.
+does not force-exit early on its own. For a detailed rationale of the shutdown sequence, see [Shutdown Ordering and Rationale](docs/shutdown-ordering.md).
 
 ## Project structure
 
@@ -798,8 +801,8 @@ The `src/` directory is split across several modules:
 - **`chain/`**: Soroban RPC integration, decoding contract events, and querying on-chain state.
 - **`indexer/`**: Polling the blockchain and applying streamed events to the database.
 - **`lib/`**: Shared utilities and domain logic like vesting math.
-- **`repositories/`**: Database access layer for reading and writing models.
-- **`routes/`**: HTTP API endpoints served by Fastify.
+- **`repositories/`**: Database access layer for reading and writing models. See [Contributing Guide](CONTRIBUTING.md) for repository conventions.
+- **`routes/`**: HTTP API endpoints served by Fastify. See [Request Lifecycle](docs/request-lifecycle.md) and [Endpoint Failure Modes](docs/endpoint-failure-modes.md).
 
 ```
 src/
@@ -1100,6 +1103,20 @@ AssertionError: expected ... to equal ...
    ```bash
    npx vitest run --project unit tests/path/to/test.test.ts
    ```
+
+## Documentation & Guides
+
+Comprehensive technical documentation is maintained under the [`docs/`](docs/) directory:
+
+- **[Running Against a Local Network](docs/local-network.md)** — Step-by-step setup and configuration for developing against local Soroban RPC nodes.
+- **[Derived Figures & Dynamic Vesting](docs/derived-figures.md)** — Rationale for computing vesting figures per request and on-chain consistency guarantees.
+- **[API Versioning Policy](docs/api-versioning.md)** — Stability guarantees, breaking change definitions, and deprecation timelines.
+- **[Shutdown Ordering and Rationale](docs/shutdown-ordering.md)** — Graceful termination order protecting transactions and in-flight HTTP requests.
+- **[Structured Logging and Log Fields](docs/logging.md)** — Guide to log severity levels, common metadata, and request-tracing fields.
+- **[Endpoint Failure Modes and Error Handling](docs/endpoint-failure-modes.md)** — Detailed failure matrix, status codes, and `ApiErrorCode` definitions.
+- **[End-to-End Request Lifecycle](docs/request-lifecycle.md)** — Architecture flowchart and step-by-step layer responsibilities.
+- **[Failed Events Retention Guide](docs/failed-events-retention.md)** — Cleanup policies and maintenance queries for the `FailedEvent` table.
+- **[Contributing Guide](CONTRIBUTING.md)** — Coding standards, repository layer conventions, and testing workflows.
 
 ## Related repositories
 
