@@ -1,10 +1,13 @@
+#346 Document the expected resource footprint
+Repo Avatar
+TricklePay/tricklepay-backend
 Summary
-When indexing stalls an operator needs a checklist: what to look at, which metric confirms it, and what to do. That knowledge is not written down anywhere.
+Anyone deploying the service needs a rough idea of memory, connection and storage use, and there is no guidance at all today.
 
 Acceptance criteria
- A runbook describes how to diagnose a stalled indexer.
- It names the metrics and log lines to check.
- It lists the recovery steps in order.
+ The documentation gives an indicative resource footprint.
+ It states the database connection usage.
+ It notes how event volume affects storage growth.
 Getting started
 Fork this repository, clone your fork, and add this repo as upstream:
 
@@ -13,8 +16,10 @@ cd tricklepay-backend
 git remote add upstream https://github.com/TricklePay/tricklepay-backend.git
 Create a branch for this issue:
 
-git checkout -b docs/issue-344
+git checkout -b docs/issue-346
 Suggested commit message:
 
-docs: add a runbook for a stalled indexer
+docs: document the expected resource footprint
 Run npm run typecheck, npm test, and npm run build before opening a pull request and linking this issue.
+
+
