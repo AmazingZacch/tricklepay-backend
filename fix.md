@@ -1,13 +1,13 @@
-#343 Document the retry and backoff behaviour
+#345 Document the operational runbook for a failing database
 Repo Avatar
 TricklePay/tricklepay-backend
 Summary
-Repeated RPC failures are backed off rather than retried immediately, which affects how quickly the indexer recovers and how much load it puts on a provider.
+A database outage affects the read API and the indexer differently, and an operator needs to know which symptoms to expect and what recovers automatically.
 
 Acceptance criteria
- The documentation explains the retry and backoff behaviour.
- It states the bounds applied.
- The description matches the implementation.
+ A runbook describes the symptoms of a database outage.
+ It states what recovers automatically and what needs intervention.
+ It names the relevant metrics.
 Getting started
 Fork this repository, clone your fork, and add this repo as upstream:
 
@@ -16,8 +16,10 @@ cd tricklepay-backend
 git remote add upstream https://github.com/TricklePay/tricklepay-backend.git
 Create a branch for this issue:
 
-git checkout -b docs/issue-343
+git checkout -b docs/issue-345
 Suggested commit message:
 
-docs: document the retry and backoff behaviour
-Run npm run typecheck, npm test, and npm run build before opening a pull request and linking this issue
+docs: add a runbook for a database outage
+Run npm run typecheck, npm test, and npm run build before opening a pull request and linking this issue.
+
+
