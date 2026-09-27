@@ -1,6 +1,20 @@
 # Documentation Index
 
-This directory contains technical documentation and operational guides for the TricklePay backend service:
+This directory contains technical documentation and operational guides for the TricklePay backend service.
+
+## What belongs in the README vs. docs/
+
+**The main [README.md](../README.md)** is the entry point for developers and operators getting started with the service. It includes:
+- Quick start and setup instructions
+- High-level architecture overview ("How it works")
+- API endpoint reference and example responses
+- Configuration reference (environment variables)
+- Running locally and testing instructions
+- Project structure and contribution guidelines
+
+**The `docs/` directory** holds focused technical documentation and operational guides that are too detailed for the README or cover specialized topics. Documents here assume the reader is already familiar with the service's basic concepts and is looking for depth on a specific area.
+
+## Documents in this directory
 
 - [api-error-codes.md](api-error-codes.md): Reference for the stable, machine-readable error codes returned in API failures and their response shape.
 - [database-schema.md](database-schema.md): PostgreSQL schema reference covering models (`Stream`, `IndexedEvent`, `FailedEvent`, `IndexerState`), field definitions, types, indexes, and persistence logic.
@@ -10,3 +24,15 @@ This directory contains technical documentation and operational guides for the T
 - [indexer-failure-policy.md](indexer-failure-policy.md): Explanation of the skip-and-record failure policy, the liveness vs. completeness trade-off, and where failed events are recorded for operator review.
 - [indexer-start-ledger.md](indexer-start-ledger.md): Guide for choosing the `INDEXER_START_LEDGER` configuration value for new deployments, explaining the trade-offs between backfill duration and historical data completeness.
 - [request-ids.md](request-ids.md): Documentation on Request ID behavior, client-supplied header validation (`x-request-id`), and traceability in responses and logs.
+
+## When to add a new document here
+
+Add a new file to `docs/` when:
+- The topic is too detailed for the main README (e.g., complete schema field descriptions, detailed operational procedures)
+- It documents operator or maintenance workflows (e.g., data retention, manual intervention procedures)
+- It explains internal behavior or design decisions that are not immediately needed for basic usage
+
+Keep it in the main README when:
+- It's needed to get the service running (setup, installation, configuration)
+- It's part of the high-level overview of what the service does and how
+- It's a reference that will be consulted frequently (API endpoints, configuration variables)
