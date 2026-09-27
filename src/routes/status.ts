@@ -7,6 +7,47 @@ import { countFailedEvents } from "../repositories/failed-events.js";
 
 import { getIndexerPosition } from "../repositories/indexer-state.js";
 
+// The default TTL for the server-side status cache. Kept short (2 s) so
+// monitoring tools get a reasonably fresh view without hammering the database
+// on every poll. The value is exported so tests can pass a custom TTL and
+// exercise expiry without sleeping for the production window.
+export const STATUS_CACHE_TTL_MS = 2_000;
+
+type StatusPayload = {
+  indexer: {
+    initialized: boolean;
+    lastLedger: number;
+    cursor: string | null;
+    updatedAt: string | null;
+  };
+  chain: { latestLedger: number };
+  lagLedgers: number | null;
+  failedEventCount: number;
+};
+
+// Simple in-process TTL cache: one slot, refreshed whenever the entry is older
+// than `ttlMs`. Extracted as a factory so each plugin registration gets its own
+// independent cache, which keeps tests isolated from one another.
+function makeStatusCache(ttlMs: number) {
+  let cachedAt = -Infinity;
+  let cached: StatusPayload | null = null;
+
+  return {
+    get(now: number): StatusPayload | null {
+      return now - cachedAt < ttlMs ? cached : null;
+    },
+    set(payload: StatusPayload, now: number): void {
+      cached = payload;
+      cachedAt = now;
+    },
+  };
+}
+
+export type StatusRoutesOptions = {
+  /** Override the cache TTL (milliseconds). Defaults to STATUS_CACHE_TTL_MS. */
+  cacheTtlMs?: number;
+};
+
 // Reports how far the indexer has progressed, so an operator or monitor can see
 // whether it is keeping up with the chain. The indexer's position and the
 // chain's head are reported separately, because only the distance between them
@@ -17,13 +58,25 @@ import { getIndexerPosition } from "../repositories/indexer-state.js";
 // of the indexer's last completed poll. `updatedAt` is when that was: an
 // indexer that has stopped leaves a lag that no longer grows, and this is what
 // tells that apart from one that is genuinely level.
-export async function statusRoutes(app: FastifyInstance): Promise<void> {
+export async function statusRoutes(
+  app: FastifyInstance,
+  opts: StatusRoutesOptions = {},
+): Promise<void> {
+  const ttlMs = opts.cacheTtlMs ?? STATUS_CACHE_TTL_MS;
+  const cache = makeStatusCache(ttlMs);
+
   app.get("/status", async (_request, reply) => {
+    const now = Date.now();
+    const hit = cache.get(now);
+    if (hit !== null) {
+      reply.header("Cache-Control", "no-store");
+      return hit;
+    }
+
     const position = await getIndexerPosition();
     const failedEventCount = await countFailedEvents();
 
-    reply.header("Cache-Control", "no-store");
-    return {
+    const payload: StatusPayload = {
       indexer: {
         initialized: position !== null,
         lastLedger: position?.lastLedger ?? 0,
@@ -39,5 +92,10 @@ export async function statusRoutes(app: FastifyInstance): Promise<void> {
       lagLedgers: position ? Math.max(0, position.chainLedger - position.lastLedger) : null,
       failedEventCount,
     };
+
+    cache.set(payload, now);
+    reply.header("Cache-Control", "no-store");
+    return payload;
   });
 }
+
