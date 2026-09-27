@@ -12,6 +12,8 @@ import Fastify, {
   type FastifyInstance,
 } from "fastify";
 
+import { swaggerConfig, swaggerUiConfig } from "./api-spec.js";
+
 import type { Config } from "./config.js";
 
 import { checkHealth } from "./db.js";
@@ -201,57 +203,11 @@ export async function buildServer(config?: Partial<Config>): Promise<FastifyInst
   app.addSchema(apiErrorSchema);
 
   // Generate the OpenAPI 3.0 spec from route schemas automatically.
-  await app.register(swagger, {
-    openapi: {
-      openapi: "3.0.3",
-      info: {
-        title: "TricklePay API",
-        description:
-          "Indexer and read API for TricklePay token streams on Stellar. " +
-          "The indexer mirrors on-chain stream state into Postgres and this API " +
-          "serves it, computing live vesting figures server-side.",
-        version: "0.1.0",
-        license: {
-          name: "MIT",
-          url: "https://opensource.org/licenses/MIT",
-        },
-      },
-      tags: [
-        {
-          name: "streams",
-          description: "Token stream read endpoints.",
-        },
-        {
-          name: "indexer",
-          description: "Indexer health and progress.",
-        },
-      ],
-      components: {
-        // Schemas are pulled from app.addSchema calls above; no need to list
-        // them here — @fastify/swagger discovers them automatically.
-      },
-    },
-    // Without this, every shared schema is emitted under a positional name
-    // ("def-0", "def-1", ...) and the $ref targets in the routes point at
-    // those. Naming each component after its $id is what makes the spec
-    // readable and keeps generated clients stable as schemas are added.
-    refResolver: {
-      buildLocalReference(json, _baseUri, _fragment, i) {
-        return (json.$id as string | undefined) ?? `def-${i}`;
-      },
-    },
-  });
+  await app.register(swagger, swaggerConfig);
 
   // Serve the interactive Swagger UI at /docs and the raw spec at /docs/json
   // and /docs/yaml (these paths are the @fastify/swagger-ui defaults).
-  await app.register(swaggerUi, {
-    routePrefix: "/docs",
-    uiConfig: {
-      // Open the models panel by default so the schema components are visible.
-      defaultModelsExpandDepth: 2,
-      defaultModelExpandDepth: 3,
-    },
-  });
+  await app.register(swaggerUi, swaggerUiConfig);
 
   app.get("/health", {
     schema: {
