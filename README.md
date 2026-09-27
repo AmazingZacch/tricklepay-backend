@@ -129,6 +129,33 @@ For complete definitions and supporting terms, see [docs/glossary.md](docs/gloss
 
 ## API
 
+The service exposes a REST API for querying indexed stream data and checking system health. An interactive OpenAPI (Swagger) viewer and machine-readable specification are served alongside the data endpoints.
+
+### API Specification
+
+| Path | Format | Description |
+| --- | --- | --- |
+| `/docs` | HTML | Interactive Swagger UI for exploring and testing the API |
+| `/docs/json` | JSON | OpenAPI 3.0 specification in JSON format |
+| `/docs/yaml` | YAML | OpenAPI 3.0 specification in YAML format |
+
+The specification is **generated automatically** from route schemas defined in the codebase. When you add or modify an endpoint in `src/routes/`, the OpenAPI document updates accordingly. The generation is handled by `@fastify/swagger` and `@fastify/swagger-ui`.
+
+**Accessing the specification:**
+
+```bash
+# View the interactive docs in a browser
+open http://localhost:3000/docs
+
+# Fetch the JSON spec programmatically
+curl http://localhost:3000/docs/json > openapi.json
+
+# Fetch the YAML spec
+curl http://localhost:3000/docs/yaml > openapi.yaml
+```
+
+### Endpoints
+
 | Method | Path | Description |
 | --- | --- | --- |
 | `GET` | `/` | Service index: name, version, and a list of endpoints. |
@@ -152,7 +179,6 @@ The `GET /streams` endpoint supports pagination through the following query para
 | `GET` | `/streams/summary` | Counts and exact amount totals per status (`pending`, `streaming`, `completed`, `cancelled`). |
 | `GET` | `/streams/:id` | A single stream by id. |
 | `GET` | `/metrics` | Prometheus metrics. |
-| `GET` | `/docs` | Interactive Swagger UI; the raw OpenAPI spec is served at `/docs/json` and `/docs/yaml`. |
 
 Each stream is returned with its stored fields plus derived `vested`,
 `withdrawable`, `locked`, `progress`, and `status` (`pending`, `streaming`,
