@@ -4,6 +4,7 @@ This directory contains technical documentation and operational guides for the T
 
 - [adding-metrics.md](adding-metrics.md): Guide for adding new Prometheus metrics, including naming conventions, label best practices, and warnings against unbounded cardinality.
 - [api-error-codes.md](api-error-codes.md): Reference for the stable, machine-readable error codes returned in API failures and their response shape.
+- [database-migrations.md](database-migrations.md): Guide for creating and applying Prisma migrations, including workflow steps, production deployment, and troubleshooting.
 - [database-schema.md](database-schema.md): PostgreSQL schema reference covering models (`Stream`, `IndexedEvent`, `FailedEvent`, `IndexerState`), field definitions, types, indexes, and persistence logic.
 - [event-replay.md](event-replay.md): Operator guide for the event replay recovery CLI tool (`npm run replay-failed-events`), detailing how to inspect, dry-run, and reprocess failed events.
 - [failed-events-retention.md](failed-events-retention.md): Recommended data retention windows and SQL cleanup instructions for pruning unresolved records from the `FailedEvent` table.
