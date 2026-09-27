@@ -1,13 +1,13 @@
-#346 Document the expected resource footprint
+#343 Document the retry and backoff behaviour
 Repo Avatar
 TricklePay/tricklepay-backend
 Summary
-Anyone deploying the service needs a rough idea of memory, connection and storage use, and there is no guidance at all today.
+Repeated RPC failures are backed off rather than retried immediately, which affects how quickly the indexer recovers and how much load it puts on a provider.
 
 Acceptance criteria
- The documentation gives an indicative resource footprint.
- It states the database connection usage.
- It notes how event volume affects storage growth.
+ The documentation explains the retry and backoff behaviour.
+ It states the bounds applied.
+ The description matches the implementation.
 Getting started
 Fork this repository, clone your fork, and add this repo as upstream:
 
@@ -16,10 +16,8 @@ cd tricklepay-backend
 git remote add upstream https://github.com/TricklePay/tricklepay-backend.git
 Create a branch for this issue:
 
-git checkout -b docs/issue-346
+git checkout -b docs/issue-343
 Suggested commit message:
 
-docs: document the expected resource footprint
-Run npm run typecheck, npm test, and npm run build before opening a pull request and linking this issue.
-
-
+docs: document the retry and backoff behaviour
+Run npm run typecheck, npm test, and npm run build before opening a pull request and linking this issue
