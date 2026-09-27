@@ -17,6 +17,7 @@ This directory contains technical documentation and operational guides for the T
 ## Documents in this directory
 
 - [api-error-codes.md](api-error-codes.md): Reference for the stable, machine-readable error codes returned in API failures, their response shape, and the log redaction behaviour that prevents sensitive information from reaching clients.
+- [backfill-duration.md](backfill-duration.md): Explains what determines how long an indexer backfill takes, how to estimate remaining progress, and the metric that shows it.
 - [database-schema.md](database-schema.md): PostgreSQL schema reference covering models (`Stream`, `IndexedEvent`, `FailedEvent`, `IndexerState`), field definitions, types, indexes, and persistence logic.
 - [database-outage-runbook.md](database-outage-runbook.md): Operator checklist for database outage symptoms, relevant metrics, automatic recovery behavior, and actions for unresolved event failures.
 - [event-replay.md](event-replay.md): Operator guide for the event replay recovery CLI tool (`npm run replay-failed-events`), detailing how to inspect, dry-run, and reprocess failed events.
