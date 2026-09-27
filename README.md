@@ -134,7 +134,7 @@ For complete definitions and supporting terms, see [docs/glossary.md](docs/gloss
 | `GET` | `/` | Service index: name, version, and a list of endpoints. |
 | `GET` | `/health` | Liveness check. Returns 200 with the service version; performs no database read. |
 | `GET` | `/ready` | Readiness check. Verifies database connectivity and reports indexer lag; returns 503 when the database is unavailable. |
-| `GET` | `/status` | Indexer progress against the chain. |
+| `GET` | `/status` | Indexer progress against the chain. Response includes `Cache-Control: no-store` to prevent stale lag readings. |
 | `GET` | `/streams` | List streams. Query params: `sender`, `recipient`, `token`, `limit`, `offset`, `includeTotal`, `cancelled`, `cursor`. Address filters accept lowercase and padded spellings and are normalized before matching. `total` is only included when `includeTotal=true`; `cancelled` filters by cancellation status when given, and is omitted to return both. |
 
 ### Pagination Parameters
@@ -149,7 +149,7 @@ The `GET /streams` endpoint supports pagination through the following query para
 | `includeTotal` | boolean | false | - | When `true`, includes the total count of matching streams |
 
 **Note:** When `cursor` is provided, `offset` is ignored and offset ceiling checks are skipped. Use cursor-based pagination for stable results under concurrent inserts.
-| `GET` | `/streams/summary` | Counts and exact amount totals per status (`pending`, `streaming`, `completed`, `cancelled`). |
+| `GET` | `/streams/summary` | Aggregate counts and exact total amounts per status (`pending`, `streaming`, `completed`, `cancelled`). Useful for dashboard overview displays without fetching individual streams. Response is cached for 30 seconds. |
 | `GET` | `/streams/:id` | A single stream by id. |
 | `GET` | `/metrics` | Prometheus metrics. |
 | `GET` | `/docs` | Interactive Swagger UI; the raw OpenAPI spec is served at `/docs/json` and `/docs/yaml`. |
@@ -158,6 +158,27 @@ Each stream is returned with its stored fields plus derived `vested`,
 `withdrawable`, `locked`, `progress`, and `status` (`pending`, `streaming`,
 `completed`, or `cancelled`). `progress` is vesting progress in basis points
 (0–10000).
+
+### Stream Summary Endpoint
+
+The `/streams/summary` endpoint returns aggregate counts and exact total amounts grouped by lifecycle status. It is designed for dashboard overview displays where individual stream details are not needed.
+
+**When to use `/streams/summary` instead of `/streams`:**
+- Building a dashboard "at a glance" panel showing counts and totals per status
+- Displaying aggregate metrics without paginating through individual streams
+- Monitoring overall system activity across all indexed streams
+
+**Response format:**
+```json
+{
+  "pending": { "count": 42, "totalAmount": "1000000000000000", "withdrawn": "0" },
+  "streaming": { "count": 123, "totalAmount": "5000000000000000", "withdrawn": "1250000000000000" },
+  "completed": { "count": 89, "totalAmount": "3000000000000000", "withdrawn": "3000000000000000" },
+  "cancelled": { "count": 5, "totalAmount": "250000000000000", "withdrawn": "100000000000000" }
+}
+```
+
+All amounts are exact integer base units encoded as strings (not JSON numbers) to preserve full 128-bit precision. The response is cached for 30 seconds (`Cache-Control: public, max-age=30`).
 
 **Data Types and Precision**
 - **Amounts** (`totalAmount`, `withdrawn`, `vested`, `withdrawable`, `locked`) are returned as strings holding integer base units.
@@ -183,6 +204,8 @@ separate figures, because only the distance between them means anything:
 ```
 
 **Field reference**
+
+**Cache behaviour**: The `/status` endpoint sets `Cache-Control: no-store` to prevent stale readings. Clients polling for indexer progress should fetch fresh data on every request; intermediate proxies and CDNs are instructed not to cache the response.
 
 | Field | Type | Description |
 | --- | --- | --- |
