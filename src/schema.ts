@@ -21,6 +21,7 @@ export const STREAM_EVENT_SCHEMA_ID = "StreamEvent";
 export const STREAM_EVENT_HISTORY_RESPONSE_SCHEMA_ID = "StreamEventHistoryResponse";
 export const INDEXER_STATUS_SCHEMA_ID = "IndexerStatus";
 export const ERROR_SCHEMA_ID = "ApiError";
+export const API_INDEX_SCHEMA_ID = "ApiIndex";
 
 // ---------------------------------------------------------------------------
 // StreamView — a single token stream as the API renders it.
@@ -410,6 +411,43 @@ export const apiErrorSchema = {
         "Request id echoed from the x-request-id response header, for matching " +
         "this error to its server log entry.",
       examples: ["req-1"],
+    },
+  },
+} as const;
+
+// ---------------------------------------------------------------------------
+// ApiIndex — the self-describing index served at the root.
+// ---------------------------------------------------------------------------
+export const apiIndexSchema = {
+  $id: API_INDEX_SCHEMA_ID,
+  type: "object",
+  description: "Self-describing index of the API.",
+  required: ["name", "description", "network", "contractId", "endpoints"],
+  properties: {
+    name: { type: "string", examples: ["tricklepay-backend"] },
+    description: { type: "string" },
+    network: {
+      type: "string",
+      description: "Stellar network this instance indexes.",
+      examples: ["testnet"],
+    },
+    contractId: {
+      type: "string",
+      description:
+        "Soroban contract id of the stream contract this instance indexes, so a " +
+        "client can confirm it is pointed at the deployment it expects.",
+    },
+    endpoints: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["method", "path", "description"],
+        properties: {
+          method: { type: "string" },
+          path: { type: "string" },
+          description: { type: "string" },
+        },
+      },
     },
   },
 } as const;

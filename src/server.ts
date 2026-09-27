@@ -32,6 +32,7 @@ import {
   streamListResponseSchema,
   streamSummaryResponseSchema,
   streamViewSchema,
+  apiIndexSchema,
 } from "./schema.js";
 
 import { serviceVersion } from "./version.js";
@@ -199,6 +200,7 @@ export async function buildServer(config?: Partial<Config>): Promise<FastifyInst
   app.addSchema(streamSummaryResponseSchema);
   app.addSchema(indexerStatusSchema);
   app.addSchema(apiErrorSchema);
+  app.addSchema(apiIndexSchema);
 
   // Generate the OpenAPI 3.0 spec from route schemas automatically.
   await app.register(swagger, {
