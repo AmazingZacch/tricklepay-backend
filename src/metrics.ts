@@ -36,8 +36,19 @@ interface Metric {
 
 const registry: Metric[] = [];
 
-function register(m: Metric): void {
-  registry.push(m);
+/**
+ * Constructs and registers a metric collector in the shared registry.
+ *
+ * Consolidates construction of the registry record and enrollment so each
+ * metric class shares a single registration path, avoiding missed registrations.
+ */
+export function registerMetric(
+  name: string,
+  help: string,
+  type: "counter" | "gauge" | "histogram",
+  collect: () => string,
+): void {
+  registry.push({ name, help, type, collect });
 }
 
 // Renders all registered metrics in Prometheus exposition format.
@@ -57,12 +68,7 @@ export class Counter {
     readonly help: string,
     readonly labelNames: string[] = [],
   ) {
-    register({
-      name,
-      help,
-      type: "counter",
-      collect: () => this.serialize(),
-    });
+    registerMetric(name, help, "counter", () => this.serialize());
   }
 
   inc(labels: Record<string, string> = {}, amount = 1): void {
@@ -102,12 +108,7 @@ export class Gauge {
     readonly help: string,
     readonly labelNames: string[] = [],
   ) {
-    register({
-      name,
-      help,
-      type: "gauge",
-      collect: () => this.serialize(),
-    });
+    registerMetric(name, help, "gauge", () => this.serialize());
   }
 
   set(labels: Record<string, string>, value: number): void;
@@ -155,12 +156,7 @@ export class Histogram {
     buckets: number[] = DEFAULT_BUCKETS,
   ) {
     this.buckets = [...buckets].sort((a, b) => a - b);
-    register({
-      name,
-      help,
-      type: "histogram",
-      collect: () => this.serialize(),
-    });
+    registerMetric(name, help, "histogram", () => this.serialize());
   }
 
   observe(labels: Record<string, string>, value: number): void {

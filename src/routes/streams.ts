@@ -33,6 +33,7 @@ import {
   STREAM_VIEW_SCHEMA_ID,
 } from "../schema.js";
 import { listIndexedEvents } from "../repositories/indexed-events.js";
+import { nowSeconds } from "../lib/time.js";
 
 const MAX_LIMIT = 100;
 const DEFAULT_LIMIT = 50;
@@ -41,17 +42,6 @@ const DEFAULT_LIMIT = 50;
 const MAX_OFFSET = 10000;
 
 type StreamStatus = "pending" | "streaming" | "completed" | "cancelled";
-
-function nowSeconds(): bigint {
-  return BigInt(Math.floor(Date.now() / 1000));
-}
-
-function statusOf(stream: Stream, now: bigint): StreamStatus {
-  if (stream.cancelled) return "cancelled";
-  if (now < stream.startTime) return "pending";
-  if (now >= stream.endTime) return "completed";
-  return "streaming";
-}
 
 function parseLimit(raw: string | undefined): number {
   const value = raw ? Number(raw) : DEFAULT_LIMIT;

@@ -6,6 +6,7 @@ import {
   MIN_POLL_INTERVAL_MS,
   isLocalUrl,
   loadConfig,
+  type Config,
 } from "../src/config.js";
 
 // `isLocalUrl` is tested in isolation first, then `loadConfig` is exercised
@@ -410,4 +411,20 @@ describe("loadConfig — TRUSTED_PROXIES validation", () => {
     });
   });
 });
+
+describe("loadConfig — readonly configuration (#369)", () => {
+  it("type prevents mutation of configuration properties", () => {
+    // Verified at compile time via @ts-expect-error; typecheck fails if properties are mutable
+    const mutate = (config: Config) => {
+      // @ts-expect-error - mutation must fail typecheck (#369)
+      config.port = 8080;
+      // @ts-expect-error - mutation must fail typecheck (#369)
+      config.host = "127.0.0.1";
+      // @ts-expect-error - array mutation must fail typecheck (#369)
+      config.trustedProxies.push("192.168.1.1");
+    };
+    expect(mutate).toBeDefined();
+  });
+});
+
 

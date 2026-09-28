@@ -7,6 +7,7 @@
 
 import type { Stream } from "@prisma/client";
 
+import { nowSeconds } from "./time.js";
 import { vestedAmount, withdrawableAmount } from "./vesting.js";
 
 // ---------------------------------------------------------------------------
@@ -14,10 +15,6 @@ import { vestedAmount, withdrawableAmount } from "./vesting.js";
 // ---------------------------------------------------------------------------
 
 type StreamStatus = "pending" | "streaming" | "completed" | "cancelled";
-
-function nowSeconds(): bigint {
-  return BigInt(Math.floor(Date.now() / 1000));
-}
 
 function statusOf(stream: Stream, now: bigint): StreamStatus {
   if (stream.cancelled) return "cancelled";
