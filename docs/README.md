@@ -30,6 +30,7 @@ This directory contains technical documentation and operational guides for the T
 - [indexer-stalled-runbook.md](indexer-stalled-runbook.md): Operator checklist for diagnosing a stalled indexer using `/status`, `/metrics`, and application logs, followed by ordered recovery steps.
 - [resource-footprint.md](resource-footprint.md): Indicative deployment sizing, per-process Prisma connection usage, and how retained event volume affects PostgreSQL storage growth.
 - [request-ids.md](request-ids.md): Documentation on Request ID behavior, client-supplied header validation (`x-request-id`), and traceability in responses and logs.
+- [request-size-limits.md](request-size-limits.md): Documentation on request body and query string size limits, including defaults, configuration, and rejection behavior.
 
 ## When to add a new document here
 
