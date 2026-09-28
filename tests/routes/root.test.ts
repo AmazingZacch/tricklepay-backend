@@ -57,4 +57,10 @@ describe("GET /", () => {
     expect(body).toHaveProperty("endpoints");
     expect(Array.isArray(body.endpoints)).toBe(true);
   });
+
+  it("includes the indexed contract id", async () => {
+    const { body } = await getRoot();
+    expect(body.contractId).toBe(mockConfig.contractId);
+  });
+
 });

@@ -86,7 +86,7 @@ That means these figures track wall-clock time rather than the last indexed
 event — a stream's `vested` amount can be higher on a second request than the
 first even though the indexer applied nothing in between — and they agree with
 what the contract would report if queried directly, without ever making that
-chain round-trip.
+chain round-trip. For a detailed explanation of why these figures are computed per request and how consistency with the chain is preserved, see [Derived Figures and Real-Time Vesting](docs/derived-figures.md).
 
 ## Documentation
 
@@ -161,7 +161,7 @@ curl http://localhost:3000/docs/yaml > openapi.yaml
 | `GET` | `/` | Service index: name, version, and a list of endpoints. |
 | `GET` | `/health` | Liveness check. Returns 200 with the service version; performs no database read. |
 | `GET` | `/ready` | Readiness check. Verifies database connectivity and reports indexer lag; returns 503 when the database is unavailable. |
-| `GET` | `/status` | Indexer progress against the chain. |
+| `GET` | `/status` | Indexer progress against the chain. Response includes `Cache-Control: no-store` to prevent stale lag readings. |
 | `GET` | `/streams` | List streams. Query params: `sender`, `recipient`, `token`, `limit`, `offset`, `includeTotal`, `cancelled`, `cursor`. Address filters accept lowercase and padded spellings and are normalized before matching. `total` is only included when `includeTotal=true`; `cancelled` filters by cancellation status when given, and is omitted to return both. |
 
 ### Pagination Parameters
@@ -176,7 +176,7 @@ The `GET /streams` endpoint supports pagination through the following query para
 | `includeTotal` | boolean | false | - | When `true`, includes the total count of matching streams |
 
 **Note:** When `cursor` is provided, `offset` is ignored and offset ceiling checks are skipped. Use cursor-based pagination for stable results under concurrent inserts.
-| `GET` | `/streams/summary` | Counts and exact amount totals per status (`pending`, `streaming`, `completed`, `cancelled`). |
+| `GET` | `/streams/summary` | Aggregate counts and exact total amounts per status (`pending`, `streaming`, `completed`, `cancelled`). Useful for dashboard overview displays without fetching individual streams. Response is cached for 30 seconds. |
 | `GET` | `/streams/:id` | A single stream by id. |
 | `GET` | `/metrics` | Prometheus metrics. |
 
@@ -184,6 +184,27 @@ Each stream is returned with its stored fields plus derived `vested`,
 `withdrawable`, `locked`, `progress`, and `status` (`pending`, `streaming`,
 `completed`, or `cancelled`). `progress` is vesting progress in basis points
 (0–10000).
+
+### Stream Summary Endpoint
+
+The `/streams/summary` endpoint returns aggregate counts and exact total amounts grouped by lifecycle status. It is designed for dashboard overview displays where individual stream details are not needed.
+
+**When to use `/streams/summary` instead of `/streams`:**
+- Building a dashboard "at a glance" panel showing counts and totals per status
+- Displaying aggregate metrics without paginating through individual streams
+- Monitoring overall system activity across all indexed streams
+
+**Response format:**
+```json
+{
+  "pending": { "count": 42, "totalAmount": "1000000000000000", "withdrawn": "0" },
+  "streaming": { "count": 123, "totalAmount": "5000000000000000", "withdrawn": "1250000000000000" },
+  "completed": { "count": 89, "totalAmount": "3000000000000000", "withdrawn": "3000000000000000" },
+  "cancelled": { "count": 5, "totalAmount": "250000000000000", "withdrawn": "100000000000000" }
+}
+```
+
+All amounts are exact integer base units encoded as strings (not JSON numbers) to preserve full 128-bit precision. The response is cached for 30 seconds (`Cache-Control: public, max-age=30`).
 
 **Data Types and Precision**
 - **Amounts** (`totalAmount`, `withdrawn`, `vested`, `withdrawable`, `locked`) are returned as strings holding integer base units.
@@ -209,6 +230,8 @@ separate figures, because only the distance between them means anything:
 ```
 
 **Field reference**
+
+**Cache behaviour**: The `/status` endpoint sets `Cache-Control: no-store` to prevent stale readings. Clients polling for indexer progress should fetch fresh data on every request; intermediate proxies and CDNs are instructed not to cache the response.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -464,6 +487,9 @@ docker run -d \
   -p 3000:3000 \
   tricklepay-backend
 ```
+
+The API listens on `http://localhost:3000`.
+For instructions on pointing the indexer and API to a standalone or containerized local Soroban RPC node, see [Running Against a Local Network](docs/local-network.md).
 
 ## Failed events table
 
@@ -792,7 +818,7 @@ ticks start), then closes the HTTP server (Fastify stops accepting new
 connections and waits for in-flight requests to finish), then drains the
 Postgres connection pool, then exits `0`. Give the platform's termination
 grace period enough headroom for in-flight requests to finish — the process
-does not force-exit early on its own.
+does not force-exit early on its own. For a detailed rationale of the shutdown sequence, see [Shutdown Ordering and Rationale](docs/shutdown-ordering.md).
 
 ## Project structure
 
@@ -801,8 +827,8 @@ The `src/` directory is split across several modules:
 - **`chain/`**: Soroban RPC integration, decoding contract events, and querying on-chain state.
 - **`indexer/`**: Polling the blockchain and applying streamed events to the database.
 - **`lib/`**: Shared utilities and domain logic like vesting math.
-- **`repositories/`**: Database access layer for reading and writing models.
-- **`routes/`**: HTTP API endpoints served by Fastify.
+- **`repositories/`**: Database access layer for reading and writing models. See [Contributing Guide](CONTRIBUTING.md) for repository conventions.
+- **`routes/`**: HTTP API endpoints served by Fastify. See [Request Lifecycle](docs/request-lifecycle.md) and [Endpoint Failure Modes](docs/endpoint-failure-modes.md).
 
 ```
 src/
@@ -1103,6 +1129,20 @@ AssertionError: expected ... to equal ...
    ```bash
    npx vitest run --project unit tests/path/to/test.test.ts
    ```
+
+## Documentation & Guides
+
+Comprehensive technical documentation is maintained under the [`docs/`](docs/) directory:
+
+- **[Running Against a Local Network](docs/local-network.md)** — Step-by-step setup and configuration for developing against local Soroban RPC nodes.
+- **[Derived Figures & Dynamic Vesting](docs/derived-figures.md)** — Rationale for computing vesting figures per request and on-chain consistency guarantees.
+- **[API Versioning Policy](docs/api-versioning.md)** — Stability guarantees, breaking change definitions, and deprecation timelines.
+- **[Shutdown Ordering and Rationale](docs/shutdown-ordering.md)** — Graceful termination order protecting transactions and in-flight HTTP requests.
+- **[Structured Logging and Log Fields](docs/logging.md)** — Guide to log severity levels, common metadata, and request-tracing fields.
+- **[Endpoint Failure Modes and Error Handling](docs/endpoint-failure-modes.md)** — Detailed failure matrix, status codes, and `ApiErrorCode` definitions.
+- **[End-to-End Request Lifecycle](docs/request-lifecycle.md)** — Architecture flowchart and step-by-step layer responsibilities.
+- **[Failed Events Retention Guide](docs/failed-events-retention.md)** — Cleanup policies and maintenance queries for the `FailedEvent` table.
+- **[Contributing Guide](CONTRIBUTING.md)** — Coding standards, repository layer conventions, and testing workflows.
 
 ## Related repositories
 
