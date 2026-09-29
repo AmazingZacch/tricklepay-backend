@@ -427,3 +427,53 @@ describe("streams repository ordering", () => {
   });
 });
 
+describe("streams repository filter combinations", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("asserts two filters applied together narrow the result as an intersection", async () => {
+    const sender = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+    const recipient = "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H";
+
+    const spy = vi.spyOn(prisma.stream, "findMany").mockResolvedValueOnce([]);
+
+    await listStreams({ sender, recipient });
+
+    expect(spy).toHaveBeenCalledOnce();
+    const where = spy.mock.calls[0][0]!.where as Record<string, unknown>;
+
+    expect(where.sender).toBe(sender);
+    expect(where.recipient).toBe(recipient);
+    expect(where).not.toHaveProperty("OR");
+  });
+
+  it("asserts a filter combination with no matches returns empty", async () => {
+    const sender = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+    const token = "CBFS2HT4TIHTMWA5ZND6FEC27BRRA4V6JWOD7JIIDZVSPVAM7EJ2LZS7";
+
+    vi.spyOn(prisma.stream, "findMany").mockResolvedValueOnce([]);
+
+    const result = await listStreams({ sender, token, cancelled: true });
+
+    expect(result).toEqual({ streams: [] });
+  });
+
+  it("combines sender, recipient, and token filters into a single narrowed query", async () => {
+    const sender = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+    const recipient = "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H";
+    const token = "CBFS2HT4TIHTMWA5ZND6FEC27BRRA4V6JWOD7JIIDZVSPVAM7EJ2LZS7";
+
+    const spy = vi.spyOn(prisma.stream, "findMany").mockResolvedValueOnce([]);
+
+    await listStreams({ sender, recipient, token });
+
+    const where = spy.mock.calls[0][0]!.where as Record<string, unknown>;
+    expect(where).toEqual({
+      sender,
+      recipient,
+      token,
+    });
+  });
+});
+
