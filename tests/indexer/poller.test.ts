@@ -544,4 +544,44 @@ describe("Poller", () => {
       vi.useRealTimers();
     }
   });
+
+  describe("cursor resume and fresh start behavior", () => {
+    it("resumes from a stored cursor rather than the configured start ledger", async () => {
+      const storedCursor = "000000100-saved-cursor";
+      indexerState.getIndexerPosition.mockResolvedValue({
+        lastLedger: 50000000,
+        chainLedger: CHAIN_HEAD,
+        cursor: storedCursor,
+        updatedAt: new Date(0),
+      });
+
+      chain.getContractEvents.mockResolvedValue(pageOf([]));
+
+      await pollOnce({ startLedger: 10000000 });
+
+      expect(chain.getContractEvents).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ cursor: storedCursor }),
+      );
+    });
+
+    it("starts a fresh database from the configured ledger when no cursor is stored", async () => {
+      indexerState.getIndexerPosition.mockResolvedValue(null);
+
+      chain.getContractEvents.mockResolvedValue(pageOf([]));
+
+      const configuredStart = 45000000;
+      await pollOnce({ startLedger: configuredStart });
+
+      expect(chain.getContractEvents).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ startLedger: configuredStart }),
+      );
+      expect(indexerState.saveIndexerPosition).toHaveBeenCalledWith(
+        expect.objectContaining({ lastLedger: configuredStart - 1 }),
+      );
+    });
+  });
 });
