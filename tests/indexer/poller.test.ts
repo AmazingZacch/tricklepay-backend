@@ -285,6 +285,53 @@ describe("Poller", () => {
     expect(saved.lastLedger).toBeLessThan(LAST_APPLIED);
   });
 
+  it("asserts a partially applied page is not recorded as complete when an event fails midway", async () => {
+    chain.getContractEvents.mockResolvedValue(pageOf(captured.events));
+
+    let callCount = 0;
+    let firstAppliedLedger = 0;
+    indexer.applyEvent.mockImplementation(async (_s: any, _c: any, _n: any, event: any) => {
+      callCount++;
+      if (callCount === 1) {
+        firstAppliedLedger = event.ledger;
+        return "applied";
+      }
+      throw new Error("event apply failed midway");
+    });
+
+    await pollOnce({ startLedger: 56000000 });
+
+    expect(indexerState.saveIndexerPosition).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lastLedger: firstAppliedLedger,
+      }),
+    );
+    expect(firstAppliedLedger).toBeLessThan(LAST_APPLIED);
+  });
+
+  it("does not record page completion if processing is interrupted midway by an unhandled error", async () => {
+    chain.getContractEvents.mockResolvedValue(pageOf(captured.events));
+
+    const prismaModule = await import("../../src/db.js");
+    let callCount = 0;
+    vi.spyOn(prismaModule.prisma, "$transaction").mockImplementation(async (cb: any) => {
+      callCount++;
+      if (callCount === 2) {
+        throw new Error("Unhandled DB error mid-page");
+      }
+      return cb({});
+    });
+
+    const poller = new Poller(server, config, log);
+    (poller as any).running = true;
+
+    await expect((poller as any).tick({ lastLedger: 56000000 })).rejects.toThrow(
+      "Unhandled DB error mid-page",
+    );
+
+    expect(indexerState.saveIndexerPosition).not.toHaveBeenCalled();
+  });
+
   it("detects a cursor regression and skips the page", async () => {
     // A faulty RPC could return a cursor older than the one we already have.
     // The poller must detect this and break out of the page loop instead of
