@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Counter, Gauge, Histogram, renderMetrics } from "../src/metrics.js";
+import { Counter, Gauge, Histogram, registerMetric, renderMetrics } from "../src/metrics.js";
 
 describe("Counter", () => {
   it("increments independently for different label sets", () => {
@@ -43,6 +43,18 @@ describe("Histogram", () => {
   });
 });
 
+describe("registerMetric helper (#367)", () => {
+  it("handles collector construction and registration into shared registry", () => {
+    registerMetric("test_custom_metric", "A helper-registered metric", "gauge", () => {
+      return "# HELP test_custom_metric A helper-registered metric\n# TYPE test_custom_metric gauge\ntest_custom_metric 42";
+    });
+
+    const output = renderMetrics();
+    expect(output).toContain("test_custom_metric 42");
+    expect(output).toContain("# TYPE test_custom_metric gauge");
+  });
+});
+
 describe("Exposition format", () => {
   it("matches the exposition format for counters, gauges and histograms together", () => {
     // The previous tests have already registered a Counter, Gauge, and Histogram.
@@ -57,5 +69,6 @@ describe("Exposition format", () => {
     }
   });
 });
+
 
 

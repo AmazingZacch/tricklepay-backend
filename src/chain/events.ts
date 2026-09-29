@@ -2,6 +2,8 @@ import { scValToNative } from "@stellar/stellar-sdk";
 
 import type { rpc } from "@stellar/stellar-sdk";
 
+import { toUnixSeconds } from "../lib/time.js";
+
 // Typed representations of the events the stream contract emits. Each mirrors a
 // `#[contractevent]` struct: the first topic is the event name, the remaining
 // topics are the indexed fields, and the value is a map of the rest.
@@ -52,23 +54,6 @@ export interface CancelledEvent extends BaseEvent {
 }
 
 export type StreamEvent = CreatedEvent | WithdrawnEvent | CancelledEvent;
-
-/**
- * Converts the RPC ledger close timestamp to whole Unix seconds as a bigint.
- *
- * The RPC reports ledger close time as an RFC 3339 string; the contract works
- * in whole Unix seconds, so the two agree once the string is parsed and
- * truncated. Returns the number `NaN` (not a bigint) when the timestamp cannot
- * be parsed; the caller is expected to detect this and throw `InvalidEventError`.
- *
- * @param ledgerClosedAt - RFC 3339 timestamp string from the RPC event response.
- * @returns Ledger close time in Unix seconds, or `NaN` if the string is unparseable.
- */
-function closedAtSeconds(ledgerClosedAt: string): bigint | typeof NaN {
-  const ms = Date.parse(ledgerClosedAt);
-  if (Number.isNaN(ms)) return NaN;
-  return BigInt(Math.floor(ms / 1000));
-}
 
 // Maximum value for a uint128: 2^128 - 1.
 const MAX_UINT128 = (1n << 128n) - 1n;
@@ -130,7 +115,7 @@ export function decodeEvent(event: rpc.Api.EventResponse): StreamEvent | null {
     throw new InvalidEventError(`event ledger must be positive, got ${event.ledger}`);
   }
 
-  const closedAt = closedAtSeconds(event.ledgerClosedAt);
+  const closedAt = toUnixSeconds(event.ledgerClosedAt);
   if (typeof closedAt === "number" && Number.isNaN(closedAt)) {
     throw new InvalidEventError(`event ledgerClosedAt is not parseable: ${event.ledgerClosedAt}`);
   }

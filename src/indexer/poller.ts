@@ -4,6 +4,8 @@ import { decodeEvent, InvalidEventError } from "../chain/events.js";
 
 import { EVENT_PAGE_LIMIT, getContractEvents, type EventPage } from "../chain/rpc.js";
 
+import { nowSeconds } from "../lib/time.js";
+
 import type { Config } from "../config.js";
 
 import { prisma } from "../db.js";
@@ -209,7 +211,7 @@ export class Poller {
     // to graph poll throughput. A failed tick throws before getting here, so it
     // never emits a false heartbeat.
     indexerPollSuccess.inc();
-    indexerPollLastSuccess.set(Math.floor(Date.now() / 1000));
+    indexerPollLastSuccess.set(Number(nowSeconds()));
 
     return current;
   }

@@ -112,20 +112,20 @@ function validateContractId(contractId: string): void {
 }
 
 export interface Config {
-  port: number;
-  host: string;
-  databaseUrl: string;
-  network: string;
-  networkPassphrase: string;
-  rpcUrl: string;
-  contractId: string;
-  pollIntervalMs: number;
-  startLedger: number;
-  maxBackoffMs: number;
-  maxPagesPerTick: number;
-  bodyLimit: number;
-  queryStringLimit: number;
-  trustedProxies: string[];
+  readonly port: number;
+  readonly host: string;
+  readonly databaseUrl: string;
+  readonly network: string;
+  readonly networkPassphrase: string;
+  readonly rpcUrl: string;
+  readonly contractId: string;
+  readonly pollIntervalMs: number;
+  readonly startLedger: number;
+  readonly maxBackoffMs: number;
+  readonly maxPagesPerTick: number;
+  readonly bodyLimit: number;
+  readonly queryStringLimit: number;
+  readonly trustedProxies: readonly string[];
 }
 
 export function loadConfig(): Config {
